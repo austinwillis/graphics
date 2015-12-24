@@ -17,10 +17,21 @@
 #include <GL/glut.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
+#include <iostream>
 
-double ss = 1.0;
-double tt = 0.0;
+using namespace std;
+bool rotate = false;
+float xpos = 0, ypos = 0, zpos = 0, xrot = 0, yrot = 0, angle=0.0;
+
+float lastx, lasty;
 //<<<<<<<<<<<<<<<<<<< axis >>>>>>>>>>>>>>
+void camera (void) {
+    glRotatef(xrot,1.0,0.0,0.0);  //rotate our camera on teh 
+    glRotatef(yrot,0.0,1.0,0.0);  //rotate our camera on the 
+    glTranslated(-xpos,-ypos,-zpos); //translate the screen
+}
+
 void axis(double length)
 { // draw a z-axis, with cone at end
 	glPushMatrix();
@@ -36,10 +47,10 @@ void displayWire(void)
 {
 glMatrixMode(GL_PROJECTION); // set the view volume shape
 glLoadIdentity();
-glOrtho(-2.0*64/48.0*ss, 2.0*64/48.0*ss, -2.0*ss, 2.0*ss, 0.1, 100);
+glOrtho(-2.0*64/48.0, 2.0*64/48.0, -2.0, 2.0, 0.1, 100);
 glMatrixMode(GL_MODELVIEW); // position and aim the camera
 glLoadIdentity();
-gluLookAt(2.0+tt, 2.0, 2.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+camera();
 	
 glClear(GL_COLOR_BUFFER_BIT); // clear the screen
 glColor3d(0,0,0); // draw black lines
@@ -98,46 +109,99 @@ glPopMatrix();
 glFlush();
 }
 
+void moveMouse(int x, int y) {
+int diffx=x-lastx; //check the difference between the 
+    int diffy=y-lasty; //check the difference between the 
+    lastx=x; //set lastx to the current x position
+    lasty=y; //set lasty to the current y position
+    xrot += (float) diffy; //set the xrot to xrot with the addition
+    yrot += (float) diffx;    //set the xrot to yrot with the addition
+glutPostRedisplay();
+}
+
 void myMouse(int button, int state, int x, int y)
 {
   switch (button) {
      case GLUT_LEFT_BUTTON:
-        if (state == GLUT_DOWN) {
-            ss  = ss* 0.9;
-        glutPostRedisplay(); // draw it again
-        }
-        break;
-     case GLUT_MIDDLE_BUTTON:
-        if (state == GLUT_DOWN) {
-            ss  = ss* 1.1;
-        glutPostRedisplay(); // draw it again
+        if (state == GLUT_DOWN && rotate == true) {
+					cout << "rotate left" << endl;
         }
         break;
      case GLUT_RIGHT_BUTTON:
-        if (state == GLUT_DOWN)
-           exit (-1);
+        if (state == GLUT_DOWN && rotate == true) {
+					cout << "rotate right" << endl;
+				}
         break;
      default:
         break;
   }
+  glutPostRedisplay(); // draw it again
 }
 
 void myKeyboard(unsigned char key, int x, int y) {
-	switch (key) {
-     case 'w':
-        ss  = ss* 0.9;
-        break;
-     case 's':
-				ss  = ss* 1.1;
-        break;
-     case 'a':
-        break;
-     case 'd':
-        break;
-		 default:
-				break;
-	}		
+if (key=='q')
+    {
+    xrot += 1;
+    if (xrot >360) xrot -= 360;
+    }
+
+    if (key=='z')
+    {
+    xrot -= 1;
+    if (xrot < -360) xrot += 360;
+    }
+
+    if (key=='w')
+    {
+    float xrotrad, yrotrad;
+    yrotrad = (yrot / 180 * 3.141592654f);
+    xrotrad = (xrot / 180 * 3.141592654f);
+    xpos += float(sin(yrotrad)) ;
+    zpos -= float(cos(yrotrad)) ;
+    ypos -= float(sin(xrotrad)) ;
+    }
+
+    if (key=='s')
+    {
+    float xrotrad, yrotrad;
+    yrotrad = (yrot / 180 * 3.141592654f);
+    xrotrad = (xrot / 180 * 3.141592654f);
+    xpos -= float(sin(yrotrad));
+    zpos += float(cos(yrotrad)) ;
+    ypos += float(sin(xrotrad));
+    }
+
+    if (key=='d')
+    {
+    float yrotrad;
+    yrotrad = (yrot / 180 * 3.141592654f);
+    xpos += float(cos(yrotrad)) * 0.2;
+    zpos += float(sin(yrotrad)) * 0.2;
+    }
+
+    if (key=='a')
+    {
+    float yrotrad;
+    yrotrad = (yrot / 180 * 3.141592654f);
+    xpos -= float(cos(yrotrad)) * 0.2;
+    zpos -= float(sin(yrotrad)) * 0.2;
+    }
+
+    if (key==27)
+    {
+    exit(0);
+    }
   glutPostRedisplay(); // draw it again
+}
+
+void keyUp(unsigned char key, int x, int y) {
+	switch (key) {
+		case 'r':
+			rotate = false;
+			break;
+		default:
+			break;
+	}
 }
 //<<<<<<<<<<<<<<<<<<<<<< main >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 int main(int argc, char **argv)
@@ -149,7 +213,9 @@ glutInitWindowPosition(100, 100);
 glutCreateWindow("Transformation testbed - wireframes");
 glutDisplayFunc(displayWire);
 glutMouseFunc(myMouse);                  // register myMouse function
+glutPassiveMotionFunc(moveMouse);
 glutKeyboardFunc(myKeyboard);
+glutKeyboardUpFunc(keyUp);
 glClearColor(1.0f, 1.0f, 1.0f,0.0f);  // background is white
 glViewport(0, 0, 640, 480);
 glutMainLoop();
